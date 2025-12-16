@@ -1,7 +1,7 @@
+from __future__ import annotations
 import pandas as pd
 import numpy as np
-from __future__ import annotations
-from src.config import TARGET_COLS, CORE_FEATURES, AUX_FEATURES, DROP_COLUMNS
+from config import TARGET_COLS, CORE_FEATURES, AUX_FEATURES, DROP_COLUMNS
 
 
 def validate_columns (df: pd.DataFrame) -> None:
