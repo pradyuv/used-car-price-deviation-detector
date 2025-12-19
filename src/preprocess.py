@@ -67,9 +67,9 @@ def normalize_clean_title(df: pd.DataFrame) -> pd.DataFrame:
     blank_mask = s.isna() | s.eq("")  # catches NaN and empty strings
 
     out = pd.Series(pd.NA, index=df.index, dtype="string")
-    out[yes_mask] = "Yes"
-    out[blank_mask] = "Unknown"
-    out = out.fillna("Unknown") # fill remaining knows with unknown
+    out[yes_mask] = "yes"
+    out[blank_mask] = "unknown"
+    out = out.fillna("unknown") # fill remaining knows with unknown
     # any unexpected nonblank value -> Unknown, conservative estimate
 
     df["clean_title"] = out
@@ -172,6 +172,27 @@ def preprocess (csv_path: str) -> pd.DataFrame:
 
 df = pd.read_csv("data/raw/used_cars.csv")
 # ===== Diagnostic: engine & transmission pattern coverage =====
+
+"""
+I used this as a view into the frequency of extractable features present 
+ex. The occurent of L engine displacement, cylinder config etc.
+My findings were:
+ENGINE SIGNAL COVERAGE
+  Displacement (X.XL):        90.6%
+  Cylinder config (I4/V6):    34.3%
+  Any engine signal present:  90.7%
+
+TRANSMISSION SIGNAL COVERAGE
+  Automatic detected:         61.7%
+  Manual detected:            9.3%
+  Unknown / ambiguous:        29.0%
+
+SAMPLE ENGINE VALUES:
+['300.0hp 3.7l v6 cylinder engine flex fuel capability', '3.8l v6 24v gdi dohc', '3.5 liter dohc', '354.0hp 3.5l v6 cylinder engine gas/electric hybrid', '2.0l i4 16v gdi dohc turbo', '2.4 liter', '292.0hp 2.0l 4 cylinder engine gasoline fuel', '282.0hp 4.4l 8 cylinder engine gasoline fuel', '311.0hp 3.5l v6 cylinder engine gasoline fuel', '534.0hp electric motor electric fuel system']
+
+SAMPLE TRANSMISSION VALUES:
+['6-speed a/t', '8-speed automatic', 'automatic', '7-speed a/t', '8-speed automatic', 'f', '6-speed a/t', 'a/t', '6-speed a/t', 'a/t']
+"""
 
 engine_series = df["engine"].astype("string").str.lower()
 trans_series = df["transmission"].astype("string").str.lower()
