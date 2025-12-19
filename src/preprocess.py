@@ -1,12 +1,15 @@
 from __future__ import annotations
+from datetime import datetime
 import pandas as pd
+import numpy as np
 from config import (
     TARGET_COLS, CORE_FEATURES, AUX_FEATURES, DROP_COLUMNS,
     NUMERIC_COLS, CATEGORICAL_COLS
 )
-from datetime import datetime
 
 required_cols = TARGET_COLS + CORE_FEATURES + AUX_FEATURES
+raw_aux_cols = ["fuel_type", "engine", "transmission"]
+required_raw_cols = TARGET_COLS + CORE_FEATURES + raw_aux_cols
 required_nonnull = ["price", "brand", "model", "model_year", "milage", "accident"] # What must be present for this row to represent a coherent vehicle
 
 
@@ -26,13 +29,21 @@ Encode as categorical, not boolean
 
 def coerce_numeric(df, cols):
     for col in cols:
-        df[col] = pd.to_numeric(df[col], errors="coerce")
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors="coerce")
+    return df
+
+def sanitize_price_milage(df: pd.DataFrame) -> pd.DataFrame:
+    # Strip currency symbols, commas, and units before numeric coercion
+    # coercing numeric columsn before was just coercing these to NaN, causing the rows with these columns missing to be dropped
+    df["price"] = df["price"].astype("string").str.replace(r"[^\d.]", "", regex=True)
+    df["milage"] = df["milage"].astype("string").str.replace(r"[^\d.]", "", regex=True)
     return df
 
 def normalize_strings(df: pd.DataFrame, cols: list[str]) -> pd.DataFrame:
     for c in cols:
-        # string dtype avoids mixed types -> strip removes trailing spaces
-        df[c] = df[c].astype("string").str.strip()
+        # string dtype avoids mixed types -> strip removes trailing spaces and lower too
+        df[c] = df[c].astype("string").str.strip().str.lower()
     return df
 
 def normalize_accident(df: pd.DataFrame) -> pd.DataFrame:
@@ -97,25 +108,56 @@ def apply_sanity_filters(df: pd.DataFrame) -> pd.DataFrame:
 
     return df
 
-def normalize_categorical_cols(df: pd.DataFrame, cols: list[str]) -> pd.DataFrame:
-    for col in CATEGORICAL_COLS:
-        df = df[col].astype("string").str.strip().str.lower()
-        
+def derive_engine_displacement_liters(df: pd.DataFrame) -> pd.DataFrame:
+    s = df["engine"].astype("string").str.strip().str.lower()
+
+    #extract patterns like "2.0L" or "2.0 liter", we are trying to simplify the engine feature
+    liters = s.str.extract(r"(\d+(?:\.\d+)?)\s*l\b", expand=False)
+    liters_alt = s.str.extract(r"(\d+(?:\.\d+)?)\s*liter", expand=False)
+    out = liters.combine_first(liters_alt)
+    out = pd.to_numeric(out, errors="coerce")
+
+    electric_mask = s.str.contains("electric", na=False)
+    out = out.where(~electric_mask, other=np.nan)
+
+    df["engine_displacement_liters"] = out
+    return df
+
+def derive_transmission_type(df: pd.DataFrame) -> pd.DataFrame:
+    s = df["transmission"].astype("string").str.strip().str.lower()
+
+    auto_mask = s.str.contains(r"\bauto\b|\bautomatic\b|\ba/t\b|\bcvt\b", na=False)
+    manual_mask = s.str.contains(r"\bmanual\b|\bm/t\b", na=False)
+
+    out = pd.Series("unknown", index=df.index, dtype="string")
+    out[auto_mask] = "automatic"
+    out[manual_mask] = "manual"
+
+    df["transmission_type"] = out
+    return df
 
 def preprocess (csv_path: str) -> pd.DataFrame:
 
     df = pd.read_csv(csv_path)
-    assert_required_columns(df, required_cols)
+    assert_required_columns(df, required_raw_cols)
 
     df = df.drop(columns=DROP_COLUMNS, errors="ignore") #non essential columns, we don't consider it failure (hence errors ignore)
 
     # Normalize base types
-    df = coerce_numeric(df, NUMERIC_COLS)
-    df = normalize_strings(df, CATEGORICAL_COLS)
+    df = sanitize_price_milage(df)
+    df = coerce_numeric(df, ["price", "milage", "model_year"])
+    df = normalize_strings(df, ["brand", "model", "fuel_type", "clean_title", "engine", "transmission"])
 
     # Normalize the special condition columns
     df = normalize_accident(df)
     df = normalize_clean_title(df)
+
+    # Derive clean features from raw text fields
+    df = derive_engine_displacement_liters(df)
+    df = derive_transmission_type(df)
+
+    df = df.drop(columns=["engine", "transmission"], errors="ignore")
+    df = coerce_numeric(df, ["engine_displacement_liters"])
 
     # Keep intended columns
     df = df[required_cols].copy()
@@ -128,4 +170,35 @@ def preprocess (csv_path: str) -> pd.DataFrame:
 
 
 
+df = pd.read_csv("data/raw/used_cars.csv")
+# ===== Diagnostic: engine & transmission pattern coverage =====
 
+engine_series = df["engine"].astype("string").str.lower()
+trans_series = df["transmission"].astype("string").str.lower()
+
+# --- Engine patterns ---
+has_displacement = engine_series.str.contains(r"\b\d+(\.\d+)?l\b", na=False)
+has_cylinders = engine_series.str.contains(r"\b[vi]\d\b", na=False)
+has_any_engine_signal = has_displacement | has_cylinders
+
+print("ENGINE SIGNAL COVERAGE")
+print(f"  Displacement (X.XL):        {has_displacement.mean() * 100:.1f}%")
+print(f"  Cylinder config (I4/V6):    {has_cylinders.mean() * 100:.1f}%")
+print(f"  Any engine signal present:  {has_any_engine_signal.mean() * 100:.1f}%")
+
+# --- Transmission patterns ---
+auto_mask = trans_series.str.contains(r"\bauto\b|\ba/t\b", na=False)
+manual_mask = trans_series.str.contains(r"\bmanual\b|\bm/t\b", na=False)
+known_trans = auto_mask | manual_mask
+
+print("\nTRANSMISSION SIGNAL COVERAGE")
+print(f"  Automatic detected:         {auto_mask.mean() * 100:.1f}%")
+print(f"  Manual detected:            {manual_mask.mean() * 100:.1f}%")
+print(f"  Unknown / ambiguous:        {(~known_trans).mean() * 100:.1f}%")
+
+# --- Optional sanity samples ---
+print("\nSAMPLE ENGINE VALUES:")
+print(engine_series.dropna().head(10).tolist())
+
+print("\nSAMPLE TRANSMISSION VALUES:")
+print(trans_series.dropna().head(10).tolist())

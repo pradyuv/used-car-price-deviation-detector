@@ -29,8 +29,7 @@ Metadata / dropped:
 
 TARGET_COLS = ["price"]
 CORE_FEATURES = ["brand", "model", "model_year", "milage", "accident", "clean_title"] # Mileage here is misspelt for some reason
-AUX_FEATURES = ["fuel_type", "engine", "transmission"]
+AUX_FEATURES = ["fuel_type", "engine_displacement_liters", "transmission_type"]
 DROP_COLUMNS = ["ext_col", "int_col"]
-NUMERIC_COLS = ["price", "milage", "model_year"]
-BOOLEAN_COLS = ["accident", "clean_title"]
-CATEGORICAL_COLS = ["brand", "model", "fuel_type", "engine", "transmission"]
+NUMERIC_COLS = ["price", "milage", "model_year", "engine_displacement_liters"]
+CATEGORICAL_COLS = ["brand", "model", "fuel_type", "clean_title", "transmission_type"]
