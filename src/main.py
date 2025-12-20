@@ -1,6 +1,7 @@
 from __future__ import annotations
 from pathlib import Path
 from preprocess import preprocess
+from train_model import train_model
 
 
 def main() -> None:
@@ -13,6 +14,8 @@ def main() -> None:
     df = preprocess(str(raw_path))
     df.to_csv(out_path, index=False)
     print(f"Wrote cleaned data to {out_path}")
+
+    train_model(out_path)
 
 
 if __name__ == "__main__":
