@@ -15,7 +15,14 @@ def main() -> None:
     df.to_csv(out_path, index=False)
     print(f"Wrote cleaned data to {out_path}")
 
-    train_model(out_path)
+    pipeline = train_model(out_path)
+    rf = pipeline.named_steps["model"]
+    depths = [t.tree_.max_depth for t in rf.estimators_]
+    print("min depth:", min(depths))
+    print("avg depth:", sum(depths) / len(depths))
+    print("max depth:", max(depths))
+        
+
 
 
 if __name__ == "__main__":

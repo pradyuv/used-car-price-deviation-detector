@@ -52,12 +52,16 @@ def build_preprocessor() -> ColumnTransformer:
     )
 
 
-def build_model() -> RandomForestRegressor:
+def build_model(
+    min_samples_leaf: int = 5,
+    min_samples_split: int = 20,
+    seed: int = 42
+) -> RandomForestRegressor:
     return RandomForestRegressor(
-        n_estimators=200, # enough trees to stabilize averages without being too heavy
-        random_state=42, # RANDOM SEED FOR REPRODUCIBILITY
-        min_samples_leaf=10, #each leaf must sample at least 10 samples, reduce variance
-        min_samples_split=20, #stabilizes trees, prevents too many splits
+        n_estimators=200,  # enough trees to stabilize averages without being too heavy
+        random_state=seed,  # random seed for reproducibility
+        min_samples_leaf=min_samples_leaf,  # larger values reduce variance
+        min_samples_split=min_samples_split,  # stabilizes trees, prevents too many splits
         max_features="sqrt",
         n_jobs=-1,
     )
