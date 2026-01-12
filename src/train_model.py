@@ -29,6 +29,14 @@ def split_features_target(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.Series]:
 
 
 def build_preprocessor() -> ColumnTransformer:
+    """
+    Model‑ready transformation
+    Clean dataframe → numeric matrix for the RF (impute missing values + one‑hot
+    encode categoricals)
+    Fit only on the training split to avoid leakage, and it’s bundled with the
+    model in the pipeline so inference uses the exact same transformations
+    Different from preprocess.py where we clean the data and derive features
+    """
     numeric_features = ["model_year", "milage", "accident", "engine_displacement_liters"]
     categorical_features = [
         col for col in (CORE_FEATURES + AUX_FEATURES) if col not in numeric_features
@@ -98,7 +106,7 @@ def plot_residuals(y_true: pd.Series, y_pred: np.ndarray, out_dir: Path) -> None
     plt.close()
 
 
-def train_model(clean_csv_path: Path | None = None) -> Pipeline:
+def train_model(clean_csv_path: Path | None = None, test_size : int = 0.2, random_state : int = 42 ) -> Pipeline:
     repo_root = Path(__file__).resolve().parents[1]
     if clean_csv_path is None:
         clean_csv_path = repo_root / "data" / "processed" / "used_cars_clean.csv"
@@ -112,7 +120,7 @@ def train_model(clean_csv_path: Path | None = None) -> Pipeline:
     X, y = split_features_target(df)
 
     X_train, X_val, y_train, y_val = train_test_split(
-        X, y, test_size=0.2, random_state=42
+        X, y, test_size=test_size, random_state=random_state
     ) # standard 80/20 split
 
     """

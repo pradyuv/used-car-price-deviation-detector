@@ -2,6 +2,7 @@ from __future__ import annotations
 from pathlib import Path
 from preprocess import preprocess
 from train_model import train_model
+import joblib
 
 
 def main() -> None:
@@ -16,6 +17,7 @@ def main() -> None:
     print(f"Wrote cleaned data to {out_path}")
 
     pipeline = train_model(out_path)
+    joblib.dump(pipeline, "models/rf_expected_price.joblib")
     rf = pipeline.named_steps["model"]
     depths = [t.tree_.max_depth for t in rf.estimators_]
     print("min depth:", min(depths))
