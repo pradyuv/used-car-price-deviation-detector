@@ -198,7 +198,7 @@ engine_series = df["engine"].astype("string").str.lower()
 trans_series = df["transmission"].astype("string").str.lower()
 
 # --- Engine patterns ---
-has_displacement = engine_series.str.contains(r"\b\d+(\.\d+)?l\b", na=False)
+has_displacement = engine_series.str.contains(r"\b\d+(?:\.\d+)?l\b", na=False)
 has_cylinders = engine_series.str.contains(r"\b[vi]\d\b", na=False)
 has_any_engine_signal = has_displacement | has_cylinders
 

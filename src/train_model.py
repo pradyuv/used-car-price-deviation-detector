@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.impute import SimpleImputer
-from sklearn.metrics import mean_absolute_error, mean_squared_error
+from sklearn.metrics import mean_absolute_error, root_mean_squared_error
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder
@@ -139,7 +139,7 @@ def train_model(clean_csv_path: Path | None = None, test_size : int = 0.2, rando
 
     preds = pipeline.predict(X_val)
     mae = mean_absolute_error(y_val, preds)
-    rmse = mean_squared_error(y_val, preds, squared=False)
+    rmse = root_mean_squared_error(y_val, preds)
     print(f"Validation MAE: {mae:,.0f}")
     print(f"Validation RMSE: {rmse:,.0f}")
 

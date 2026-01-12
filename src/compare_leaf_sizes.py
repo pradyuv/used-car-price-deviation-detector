@@ -4,7 +4,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from sklearn.metrics import mean_absolute_error, mean_squared_error
+from sklearn.metrics import mean_absolute_error, root_mean_squared_error
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 
@@ -92,7 +92,7 @@ def compare_leaf_and_seed_sizes(
 
             seed_residuals[leaf] = residuals
             results[leaf]["mae"].append(mean_absolute_error(y_val, preds))
-            results[leaf]["rmse"].append(mean_squared_error(y_val, preds, squared=False))
+            results[leaf]["rmse"].append(root_mean_squared_error(y_val, preds))
             results[leaf]["residuals"].append(residuals)
 
         for threshold in abs_thresholds:
