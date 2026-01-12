@@ -2,6 +2,7 @@ from __future__ import annotations
 from pathlib import Path
 from preprocess import preprocess
 from train_model import train_model
+from assess_deviation import assess_deviation
 import joblib
 
 
@@ -23,7 +24,7 @@ def main() -> None:
     print("min depth:", min(depths))
     print("avg depth:", sum(depths) / len(depths))
     print("max depth:", max(depths))
-        
+    assess_deviation(pipeline, clean_csv_path=out_path)
 
 
 
