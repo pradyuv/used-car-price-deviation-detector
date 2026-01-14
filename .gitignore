@@ -216,3 +216,8 @@ data/processed/*
 # Trained models (local only)
 models/*
 !models/.gitkeep
+
+# Reports (generated tables; keep small sample for review)
+reports/tables/*
+!reports/tables/.gitkeep
+!reports/tables/validation_labeled_sample.csv

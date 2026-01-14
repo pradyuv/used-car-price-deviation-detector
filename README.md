@@ -53,6 +53,31 @@ This writes the cleaned CSV, trains the model, saves the pipeline, and generates
 - `reports/figures`: EDA and residual diagnostics.
 - `reports/tables`: labeled validation samples.
 
+## Project flow (MLE pipeline, for transparency purposes)
+
+1. **Define objective**: deviation detection with stable residuals (not max accuracy).
+2. **Get data**: place Kaggle CSV at `data/raw/used_cars.csv`.
+3. **EDA**: run `src/eda.py` to inspect distributions and category balance.
+4. **Preprocess**: `src/preprocess.py` enforces schema and derives clean features.
+5. **Train/validate**: `src/train_model.py` builds a pipeline and fits the RF.
+6. **Evaluate**: MAE/RMSE + residual diagnostics on validation split.
+7. **Label deviations**: `src/assess_deviation.py` computes banded thresholds and labels.
+8. **Persist outputs**: cleaned data, labeled data, plots, and the saved pipeline.
+
+Simple data flow:
+
+```
+data/raw/used_cars.csv
+  -> src/preprocess.py
+  -> data/processed/used_cars_clean.csv
+  -> src/train_model.py
+  -> models/rf_expected_price.joblib
+  -> src/assess_deviation.py
+  -> data/processed/used_cars_labeled.csv
+     reports/figures/*.png
+     reports/tables/validation_labeled.csv
+```
+
 ## Outputs
 
 - `data/processed/used_cars_clean.csv`: cleaned modeling dataset.
@@ -60,6 +85,15 @@ This writes the cleaned CSV, trains the model, saves the pipeline, and generates
 - `models/rf_expected_price.joblib`: trained pipeline artifact.
 - `reports/figures/*.png`: EDA and residual diagnostics.
 - `reports/tables/validation_labeled.csv`: labeled validation split for inspection.
+
+## Validation diagnostics
+
+These plots are generated on the validation split (via `src/assess_deviation.py`) and help track residual behavior and band stability.
+
+![Residual distribution](reports/figures/residuals_hist.png)
+![Residuals vs listed price](reports/figures/residuals_vs_price.png)
+![Mean |residual| by price band](reports/figures/residuals_mean_by_price_band.png)
+![Residuals by price band](reports/figures/residuals_box_by_price_band.png)
 
 ## Limitations and tradeoffs
 

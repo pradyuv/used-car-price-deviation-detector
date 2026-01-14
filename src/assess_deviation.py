@@ -159,6 +159,11 @@ def assess_deviation(
     tables_dir = repo_root / "reports" / "tables"
     tables_dir.mkdir(parents=True, exist_ok=True)
     val_labeled.to_csv(tables_dir / "validation_labeled.csv", index=False)
+    sample_size = min(20, len(val_labeled))
+    if sample_size:
+        val_labeled.sample(n=sample_size, random_state=seed).to_csv(
+            tables_dir / "validation_labeled_sample.csv", index=False
+        )
 
     pipeline.fit(X, y)
     preds_full = pipeline.predict(X)
